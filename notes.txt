@@ -1,0 +1,120 @@
+## LAB 1 Install Nginx
+
+### 1. install from source
+
+# pindah ke user root 
+sudo -i
+
+# install beberapa dependency yang diperlukan untuk melakukan compile source nginx
+apt update -y && apt-get install git build-essential libpcre3 libpcre3-dev zlib1g zlib1g-dev libssl-dev libgd-dev libxml2 libxml2-dev uuid-dev
+
+# unduh source code nginx dari situs resminya
+cd /usr/src
+wget http://nginx.org/download/nginx-1.23.3.tar.gz -O nginx-1.23.3.tar.gz
+
+# lalu ekstrak dengan perintah tar
+tar -xvzf nginx-1.23.3.tar.gz
+cd nginx-1.23.3
+
+# untuk kasus ini kita akan mengubah header server-nya pada berkas nginx.h berikut
+nano src/core/nginx.h
+
+# ubah baris berikut
+#define NGINX_VER          "nginx/" NGINX_VERSION
+
+# menjadi
+#define NGINX_VER          "Nacita"
+
+# ganti kata NaCita menjadi apapun yang diinginkan
+
+# eksekusi perintah configure berikut untuk memberitahu compiler bagaimana aplikasi ini akan dicompile
+./configure \
+  --prefix=/etc/nginx \
+  --sbin-path=/usr/sbin/nginx \
+  --conf-path=/etc/nginx/nginx.conf \
+  --http-log-path=/var/log/nginx/access.log \
+  --error-log-path=/var/log/nginx/error.log \
+  --with-pcre  \
+  --lock-path=/var/lock/nginx.lock \
+  --pid-path=/var/run/nginx.pid \
+  --with-http_ssl_module \
+  --with-http_image_filter_module=dynamic \
+  --modules-path=/etc/nginx/modules \
+  --with-http_v2_module \
+  --with-stream=dynamic \
+  --with-http_addition_module \
+  --with-http_mp4_module
+
+# lakukan proses compile dan install
+make && make install
+
+# periksa versi nginx yang telah terinstall
+nginx -V
+
+# contoh outputnya seperti ini
+root@samsul-lab3:/usr/src/nginx-1.23.3# nginx -V
+nginx version: Nacita
+built by gcc 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.1) 
+built with OpenSSL 1.1.1f  31 Mar 2020
+TLS SNI support enabled
+configure arguments: --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --http-log-path=/var/log/nginx/access.log --error-log-path=/var/log/nginx/error.log --with-pcre --lock-path=/var/lock/nginx.lock --pid-path=/var/run/nginx.pid --with-http_ssl_module --with-http_image_filter_module=dynamic --modules-path=/etc/nginx/modules --with-http_v2_module --with-stream=dynamic --with-http_addition_module --with-http_mp4_module
+
+# buat berkas systemd service
+nano /lib/systemd/system/nginx.service
+
+# isinya sebagai berikut
+[Unit]
+Description=Nginx Custom From Source
+After=syslog.target network-online.target remote-fs.target nss-lookup.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+PIDFile=/run/nginx.pid
+ExecStartPre=/usr/sbin/nginx -t
+ExecStart=/usr/sbin/nginx
+ExecReload=/usr/sbin/nginx -s reload
+ExecStop=/bin/kill -s QUIT $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
+
+# lakukan reload agar terbaca oleh systemd
+systemctl daemon-reload
+
+# jalankan nginx dengan systemctl
+systemctl enable nginx
+systemctl start nginx
+systemctl status nginx
+
+
+## buat log rotation agar berkas log web server tidak membengkak
+nano /etc/logrotate.d/nginx
+
+# konfigurasi logrotate sebagai berikut
+/var/log/nginx/*.log {
+    daily
+    missingok
+    rotate 7
+    compress
+    delaycompress
+    notifempty
+    create 0640 root root
+    sharedscripts
+    prerotate
+            if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
+                    run-parts /etc/logrotate.d/httpd-prerotate; \
+            fi \
+    endscript
+    postrotate
+            invoke-rc.d nginx rotate >/dev/null 2>&1
+    endscript
+}
+
+# akses melalui web browser
+http://<nginx-ip-address>
+
+
+sudo apt update && sudo apt install nginx
