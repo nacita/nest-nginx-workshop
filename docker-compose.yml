@@ -2,22 +2,22 @@ version: '3'
 
 services:
   app1:
-    image: docker pull quay.io/samsulmaarifx86/python-app-demo
+    image: quay.io/samsulmaarifx86/python-app-demo
     environment:
-      - APP_NAME="Boba Fett"
+      - APP_NAME=Boba Fett
     ports:
       - 5001:5000
 
   app2:
-    image: docker pull quay.io/samsulmaarifx86/python-app-demo
+    image: quay.io/samsulmaarifx86/python-app-demo
     environment:
-      - APP_NAME="Jango Fett"
+      - APP_NAME=Jango Fett
     ports:
       - 5002:5000
 
   app3:
-    image: docker pull quay.io/samsulmaarifx86/python-app-demo
+    image: quay.io/samsulmaarifx86/python-app-demo
     environment:
-      - APP_NAME="Mandalorian"
+      - APP_NAME=Mandalorian
     ports:
       - 5003:5000
