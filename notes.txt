@@ -149,6 +149,9 @@ http://<nginx-ip-address>
 # jika pusing dengan cara 1a di atas, bisa lakukan dengan cara berikut
 sudo apt update && sudo apt install nginx
 
+# coba akses melalui browser atau dengan curl
+curl localhost
+
 ### 2. Siapkan aplikasi backend dengan docker & docker compose
 
 # install docker terlebih dahulu
@@ -187,3 +190,10 @@ tcp   LISTEN 0      4096                  [::]:5003           [::]:*
 # jika muncul list seperti di atas, artinya aplikasi sudah berjalan dan siap digunakan
 
 
+### 3. Nginx sebagai web server static
+
+sudo wget -O /var/www/html/index.html https://raw.githubusercontent.com/nacita/nest-nginx-workshop/main/example-html/registration.html
+
+### 4. Nginx sebagai Reverse Proxy
+
+### 5. Nginx sebagai Load Balancer
