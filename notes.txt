@@ -196,4 +196,106 @@ sudo wget -O /var/www/html/index.html https://raw.githubusercontent.com/nacita/n
 
 ### 4. Nginx sebagai Reverse Proxy
 
+# hapus konfigurasi default nginx 
+rm /etc/nginx/sites-enabled/default
+
+# buat sebuah konfigurasi virtualhost pada direktori /etc/nginx/sites-available
+cd /etc/nginx/sites-available
+vim nest-proxy.conf
+
+# dengan konfigurasi sebagai berikut 
+server {
+    listen 80;
+    server_name nginx.nestacademy.ok;
+    location / {
+        proxy_pass http://localhost:5001/;
+    }
+}
+
+# simpan, lalu buat symlink konfigurasi agar konfigurasinya aktif
+ln -s /etc/nginx/sites-available/nest-proxy.conf /etc/nginx/sites-enabled/nest-proxy.conf
+
+# verifikasi konfigurasi tersebut, dan pastikan syntax-nya ok
+nginx -t
+
+# CATAT: selalu lakukan hal tersebut setiap kali mengubah konfigurasi nginx
+# berikutnya restart service nginx dengan systemctl
+systemctl restart nginx
+
+# akses melalui browser kesayangan Anda
+http://ip-server
+
+
 ### 5. Nginx sebagai Load Balancer
+
+# nah, karena kita sudah memiliki aplikasi yang telah terpasang pada lab sebelumnya (menggunakan docker compose), 
+# kita juga dapat menggunakan nginx sebagai loadbalancer 
+
+# hapus konfigurasi sebelumnya (atau tidak usah)
+rm /etc/nginx/sites-enabled/nest-proxy.conf
+
+# buat konfigurasi baru
+vim /etc/nginx/sites-available/nest-lb.conf
+
+# konfigurasinya sebagai berikut
+upstream nestacademy {
+    server 127.0.0.1:5001;
+    server 127.0.0.1:5002;
+    server 127.0.0.1:5003;
+}
+
+server {
+    listen 80;
+    server_name nginx-lb.nestacademy.ok;
+    location / {
+        proxy_pass http://nestacademy;
+    }
+}
+
+# simpan, lalu buat juga symlink
+ln -s /etc/nginx/sites-available/nest-lb.conf /etc/nginx/sites-enabled/nest-lb.conf
+
+# verifikasi dan restart nginx
+nginx -t
+systemctl restart nginx
+
+# akses melalui browser, lalu refresh berkali-kali atau curl
+curl http://nginx-lb.nestacademy.ok
+
+# algoritma loadbalancing default jika tidak kita tambahkan konfigurasi khusus adalah round-robin
+# trafik akan diteruskan ke backend secara acak
+# untuk menggunakan algoritma lainnya, kita perlu tambahkan konfigurasi
+
+# algoritma least-con : teruskan request ke server yang memiliki koneksi paling sedikit, tambahkan least_conn pada baris berikut
+upstream nestacademy {
+    least_conn;
+    server 127.0.0.1:5001;
+    server 127.0.0.1:5002;
+    server 127.0.0.1:5003;
+}
+
+# simpan, lalu restart lagi nginx-nya
+# uji kembali dengan browser atau curl
+
+
+# algoritma ip-hash : menggabungkan trafik sumber (klien) dan tujuan (server), dan menggunakan fungsi matematika untuk mengubahnya menjadi hash, koneksi lalu ditetapkan ke server tertentu, berikut konfigurasinya
+
+upstream nestacademy {
+    ip_hash;
+    server 127.0.0.1:5001;
+    server 127.0.0.1:5002;
+    server 127.0.0.1:5003;
+}
+
+# simpan, lalu restart lagi nginx-nya
+# uji dengan browser, secara hasil mungkin tidak terlihat
+
+# algoritma weighted roun-robin: mirip dengan round-robin, hanya saja untuk beberapa server bisa kita atur perbandingan bebannya, kurang lebih seperti berikut konfigurasinya
+
+upstream nestacademy {
+    server 127.0.0.1:5001 weight=3;
+    server 127.0.0.1:5002;
+    server 127.0.0.1:5003;
+}
+
+# simpan, lalu restart lagi nginx-nya
