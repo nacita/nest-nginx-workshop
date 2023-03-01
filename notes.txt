@@ -152,7 +152,11 @@ sudo apt update && sudo apt install nginx
 # coba akses melalui browser atau dengan curl
 curl localhost
 
-### 2. Siapkan aplikasi backend dengan docker & docker compose
+#####################################
+## LAB 2 Siapkan aplikasi backend  ##
+#####################################
+
+### 1. Siapkan aplikasi backend dengan docker & docker compose
 
 # install docker terlebih dahulu
 sudo apt-get update
@@ -190,11 +194,15 @@ tcp   LISTEN 0      4096                  [::]:5003           [::]:*
 # jika muncul list seperti di atas, artinya aplikasi sudah berjalan dan siap digunakan
 
 
-### 3. Nginx sebagai web server static
+##############################
+## LAB 3 Konfigurasi Nginx  ##
+##############################
+
+### Nginx sebagai web server static
 
 sudo wget -O /var/www/html/index.html https://raw.githubusercontent.com/nacita/nest-nginx-workshop/main/example-html/registration.html
 
-### 4. Nginx sebagai Reverse Proxy
+### Nginx sebagai Reverse Proxy
 
 # hapus konfigurasi default nginx 
 rm /etc/nginx/sites-enabled/default
@@ -226,7 +234,7 @@ systemctl restart nginx
 http://ip-server
 
 
-### 5. Nginx sebagai Load Balancer
+### Nginx sebagai Load Balancer
 
 # nah, karena kita sudah memiliki aplikasi yang telah terpasang pada lab sebelumnya (menggunakan docker compose), 
 # kita juga dapat menggunakan nginx sebagai loadbalancer 
@@ -266,6 +274,8 @@ curl http://nginx-lb.nestacademy.ok
 # trafik akan diteruskan ke backend secara acak
 # untuk menggunakan algoritma lainnya, kita perlu tambahkan konfigurasi
 
+## least-con
+
 # algoritma least-con : teruskan request ke server yang memiliki koneksi paling sedikit, tambahkan least_conn pada baris berikut
 upstream nestacademy {
     least_conn;
@@ -277,6 +287,7 @@ upstream nestacademy {
 # simpan, lalu restart lagi nginx-nya
 # uji kembali dengan browser atau curl
 
+## ip-hash
 
 # algoritma ip-hash : menggabungkan trafik sumber (klien) dan tujuan (server), dan menggunakan fungsi matematika untuk mengubahnya menjadi hash, koneksi lalu ditetapkan ke server tertentu, berikut konfigurasinya
 
@@ -290,7 +301,10 @@ upstream nestacademy {
 # simpan, lalu restart lagi nginx-nya
 # uji dengan browser, secara hasil mungkin tidak terlihat
 
-# algoritma weighted roun-robin: mirip dengan round-robin, hanya saja untuk beberapa server bisa kita atur perbandingan bebannya, kurang lebih seperti berikut konfigurasinya
+## weighted loadbalancer
+
+# algoritma weighted roun-robin: mirip dengan round-robin, hanya saja untuk beberapa server bisa kita atur perbandingan bebannya, 
+# kurang lebih seperti berikut konfigurasinya
 
 upstream nestacademy {
     server 127.0.0.1:5001 weight=3;
@@ -299,3 +313,18 @@ upstream nestacademy {
 }
 
 # simpan, lalu restart lagi nginx-nya
+# penjelasan singkat: setiap ada 5 request, 3 request akan diteruskan ke server pertama, lalu 1 request di server kedua, 
+# dan 1 request sisanya akan diteruskan ke server ketiga
+
+##############################
+## LAB 4 Mengamankan Nginx  ##
+##############################
+
+# Implementasi SSL/TLS  --> https://wiki.samsul.web.id/linux/LetsEncrypt.SSL.Wildcard
+# Sembunyikan informasi versi nginx
+# Nonaktifkan modul nginx yang tidak terpakai (perlu compile sendiri)
+# Set Client Buffer Size Limitations
+# Nonaktifkan HTTP Method yang tidak digunakan
+# Install modul ModSecurity --> https://wiki.samsul.web.id/linux/Install.dan.Konfigurasi.Nginx.ModSecurity
+# Implementasikan security header 
+# Nonaktifkan SSL Protocol yang sudah kadaluarsa
